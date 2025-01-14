@@ -1,15 +1,20 @@
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { Observable, switchMap, first, from, of } from 'rxjs';
+import { Observable, switchMap, first, from, of, forkJoin } from 'rxjs';
 import { AuthService } from './auth.service';
 import { User } from '@firebase/auth';
 import { AngularFireStorage } from '@angular/fire/compat/storage';
+import { catchError } from 'rxjs/operators';
 
 interface Message {
   content: string;
   senderId: string;
   timestamp: any;
   fileUrl?: string;
+  fileDeleted?: boolean;
+  id?: string;
+  fileName?: string; 
+  fileSize?: number;
 }
 
 interface Chat {
@@ -45,6 +50,7 @@ export class MessageService {
 
   /**
    * Retrieves messages for a specific chat from Firestore, ordered by timestamp.
+   * Checks for file existence in Firebase Storage and updates the message if necessary.
    * @param {string} chatId - The ID of the chat.
    * @returns {Observable<Message[]>} An observable of message arrays.
    */
@@ -53,7 +59,63 @@ export class MessageService {
       .collection<Message>(`chats/${chatId}/messages`, (ref) =>
         ref.orderBy('timestamp')
       )
-      .valueChanges({ idField: 'id' });
+      .valueChanges({ idField: 'id' })
+      .pipe(
+        switchMap((messages) => {
+          if (!messages || messages.length === 0) {
+            return of([]); // Return empty array if no messages
+          }
+          return forkJoin(
+            messages.map((message) => this.checkFileExistence(message, chatId))
+          ).pipe(
+            switchMap((updatedMessages) => {
+              return of(updatedMessages);
+            })
+          );
+        })
+      );
+  }
+
+  /**
+   * Checks if a file exists in Firebase Storage and updates the message accordingly.
+   * @param {Message} message - The message object.
+   * @param {string} chatId - The ID of the chat.
+   * @returns {Observable<Message>} An observable of the updated message.
+   */
+  private checkFileExistence(
+    message: Message,
+    chatId: string
+  ): Observable<Message> {
+    if (!message.fileUrl || message.fileDeleted) {
+      return of(message); // If no file URL or already marked as deleted, no action needed
+    }
+    return from(this.storage.refFromURL(message.fileUrl).getMetadata()).pipe(
+      switchMap(() => {
+        return of(message); // File exists, return message
+      }),
+      catchError(() => {
+        // File does not exist, update message
+        console.log('File not found for message: ', message.id);
+        return this.updateMessageFileDeleted(message, chatId);
+      })
+    );
+  }
+
+  /**
+   * Updates the fileDeleted flag of a message in Firestore.
+   * @param {Message} message - The message to update.
+   * @param {string} chatId - The ID of the chat.
+   * @returns {Observable<Message>} An observable of the updated message.
+   */
+  private updateMessageFileDeleted(
+    message: Message,
+    chatId: string
+  ): Observable<Message> {
+    const updatedMessage = { ...message, fileDeleted: true };
+    this.firestore
+      .doc(`chats/${chatId}/messages/${message.id}`)
+      .update(updatedMessage);
+    return of(updatedMessage);
   }
 
   /**
@@ -291,12 +353,14 @@ export class MessageService {
             content,
             firebaseUser,
             timestamp,
-            fileUrl
+            fileUrl,
+            file
           );
         })
       )
       .toPromise();
   }
+
   /**
    * Creates the file path for firebase storage.
    * @param {User} firebaseUser - The firebase user object.
@@ -322,7 +386,13 @@ export class MessageService {
     firebaseUser: User,
     timestamp: Date
   ): Promise<any> {
-    return this.addMessageToFirestore(chatId, content, firebaseUser, timestamp);
+    return this.addMessageToFirestore(
+      chatId,
+      content,
+      firebaseUser,
+      timestamp,
+      undefined
+    );
   }
   /**
    * Adds a message to a Firestore chat collection
@@ -338,13 +408,15 @@ export class MessageService {
     content: string,
     firebaseUser: User,
     timestamp: Date,
-    fileUrl?: string
+    fileUrl?: string,
+    file?: File
   ): Promise<any> {
     const messageData = this.createMessageData(
       content,
       firebaseUser,
       timestamp,
-      fileUrl
+      fileUrl,
+      file
     );
     console.log('Message Data:', messageData);
     return this.firestore
@@ -366,19 +438,24 @@ export class MessageService {
    *  @param {User} firebaseUser - The firebase user object.
    * @param {Date} timestamp - the timestamp.
    * @param {string} [fileUrl] - Optional fileUrl.
+   * @param {File} [file] - Optional file.
    * @returns {Message} The message data object.
    */
   private createMessageData(
     content: string,
     firebaseUser: User,
     timestamp: Date,
-    fileUrl?: string
+    fileUrl?: string,
+    file?: File
   ): Message {
     return {
       content: content.replace(/\n/g, '<br>'),
       senderId: firebaseUser.uid,
       timestamp: timestamp,
+      fileDeleted: false,
       ...(fileUrl && { fileUrl }),
+      ...(file && { fileName: file.name }),
+      ...(file && { fileSize: file.size }),
     };
   }
   /**
@@ -390,6 +467,22 @@ export class MessageService {
   private updateLastMessageTimestamp(chatId: string, timestamp: Date): void {
     this.firestore
       .doc(`chats/${chatId}`)
-      .update({ lastMessageTimestamp: timestamp });
+      .get()
+      .toPromise()
+      .then((doc) => {
+        if (doc && doc.exists) {
+          this.firestore
+            .doc(`chats/${chatId}`)
+            .update({ lastMessageTimestamp: timestamp });
+        } else {
+          console.error(`Chat document with ID ${chatId} does not exist.`);
+        }
+      })
+      .catch((error) => {
+        console.error(
+          `Error checking if chat document exists with ID: ${chatId}`,
+          error
+        );
+      });
   }
 }

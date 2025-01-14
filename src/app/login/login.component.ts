@@ -21,12 +21,12 @@ export class LoginComponent {
     this.logComponentInitialization();
   }
 
-  /**
-   * Logs the initialization of the component.
-   */
-  private logComponentInitialization(): void {
-    console.log('LoginComponent initialized');
-  }
+    /**
+     * Logs the initialization of the component.
+     */
+    private logComponentInitialization(): void {
+        console.log('LoginComponent initialized');
+    }
 
   /**
    * Initiates the login process using Google Sign-In.
@@ -36,10 +36,10 @@ export class LoginComponent {
     this.auth.googleSignIn();
   }
 
-  /**
-   * Logs when the login method is called.
-   */
-  private logLoginCall(): void {
-    console.log('Login method called');
-  }
+    /**
+     * Logs when the login method is called.
+     */
+    private logLoginCall(): void {
+        console.log('Login method called');
+    }
 }

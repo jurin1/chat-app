@@ -11,7 +11,12 @@ import { AuthService } from './auth.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, SharedModule, ChatComponent],
+  imports: [
+    CommonModule,
+    SidebarComponent,
+    SharedModule,
+    ChatComponent,
+  ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
@@ -34,12 +39,13 @@ export class AppComponent {
     this.logComponentInitialization();
   }
 
-  /**
-   * Logs the initialization of the component.
-   */
-  private logComponentInitialization(): void {
-    console.log('AppComponent initialized');
-  }
+    /**
+     * Logs the initialization of the component.
+     */
+    private logComponentInitialization(): void {
+        console.log('AppComponent initialized');
+    }
+
 
   /**
    * Handles the selection of a chat.
@@ -50,21 +56,22 @@ export class AppComponent {
     this.logSelectedChatId(chatId);
   }
 
-  /**
-   * Updates the selected chat ID.
-   * @param {string} chatId - The ID of the selected chat.
-   */
-  private updateSelectedChatId(chatId: string): void {
-    this.selectedChatId = chatId;
-  }
+    /**
+     * Updates the selected chat ID.
+     * @param {string} chatId - The ID of the selected chat.
+     */
+    private updateSelectedChatId(chatId: string): void {
+        this.selectedChatId = chatId;
+    }
 
-  /**
-   * Logs the selected chat ID.
-   * @param {string} chatId - The ID of the selected chat.
-   */
-  private logSelectedChatId(chatId: string): void {
-    console.log('Chat selected with ID: ', chatId);
-  }
+    /**
+     * Logs the selected chat ID.
+     * @param {string} chatId - The ID of the selected chat.
+     */
+    private logSelectedChatId(chatId: string): void {
+        console.log('Chat selected with ID: ', chatId);
+    }
+
 
   /**
    * Switches the current user using the AuthService.

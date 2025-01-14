@@ -6,12 +6,18 @@
             <p>
                 <strong>{{message.senderId}}:</strong>
                 <span [innerHTML]="message.content"></span>
-                <span *ngIf="message.fileUrl"
-                matTooltip="{{message.fileName}}" matTooltipPosition="above">
-                    <a [href]="message.fileUrl" target="_blank" style="margin-left: 5px; display: inline-flex; align-items: center;">
-                        <mat-icon style="margin-right: 3px;">attach_file</mat-icon>
-                    </a>
-                </span>
+                 <span *ngIf="message.fileUrl"
+                    [matTooltip]="message.fileDeleted ? (message.fileName + ' wurde gelöscht') : (message.fileName || '')"
+                    matTooltipPosition="above">
+                        <a *ngIf="!message.fileDeleted" [href]="message.fileUrl" target="_blank" style="margin-left: 5px; display: inline-flex; align-items: center;">
+                            <mat-icon style="margin-right: 3px;">attach_file</mat-icon>
+                        </a>
+                        <mat-icon *ngIf="message.fileDeleted"
+                                style="margin-left: 5px; display: inline-flex; align-items: center;">
+                            block
+                        </mat-icon>
+                         <span *ngIf="message.fileSize" style="margin-left: 5px; font-size: 0.8em;">({{formatBytes(message.fileSize)}})</span>
+                    </span>
             </p>
              <p class="message-time" [ngStyle]="{'text-align': message.senderId === currentUserId ? 'right' : 'left'}">
                 {{formatDate(message.timestamp)}}

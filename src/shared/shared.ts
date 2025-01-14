@@ -1,8 +1,8 @@
-import { NgModule } from '@angular/core';
+import { NgModule, Pipe, PipeTransform } from '@angular/core';
 import { CommonModule, NgForOf } from '@angular/common';
 import { AngularFireModule } from '@angular/fire/compat';
 import { AngularFireAuthModule } from '@angular/fire/compat/auth';
-import { environment } from '../environments/environment'; 
+import { environment } from '../environments/environment';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -16,7 +16,26 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatDialogModule } from '@angular/material/dialog';
 
-
+@Pipe({
+  name: 'fileSize',
+  standalone: true,
+})
+export class FileSizePipe implements PipeTransform {
+  transform(size: number | undefined): string {
+    if (size === undefined) {
+      return '';
+    }
+    const kb = size / 1024;
+    if (kb < 1) {
+      return `${size} Bytes`;
+    }
+    const mb = kb / 1024;
+    if (mb < 1) {
+      return `${kb.toFixed(2)} KB`;
+    }
+    return `${mb.toFixed(2)} MB`;
+  }
+}
 
 @NgModule({
   declarations: [],
@@ -24,6 +43,7 @@ import { MatDialogModule } from '@angular/material/dialog';
     CommonModule,
     AngularFireModule.initializeApp(environment.firebase),
     AngularFireAuthModule,
+    FileSizePipe,
   ],
   exports: [
     MatCardModule,
@@ -40,6 +60,7 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatToolbarModule,
     MatDialogModule,
     CommonModule,
+    FileSizePipe,
   ],
 })
 export class SharedModule {}

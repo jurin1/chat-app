@@ -30,6 +30,8 @@ interface Message {
   timestamp: any;
   fileUrl?: string;
   fileName?: string;
+  fileDeleted?: boolean;
+  fileSize?: number;
 }
 
 /**
@@ -210,7 +212,7 @@ export class ChatComponent
    */
   sendMessage(): void {
     if (this.isMessageValid()) {
-      this.sendChatMessage();
+      this.sendChatMessage(this.selectedChatId);
     }
   }
 
@@ -225,9 +227,9 @@ export class ChatComponent
   /**
    * Sends the chat message using the MessageService.
    */
-  private sendChatMessage(): void {
+  private sendChatMessage(selectedChatId: string): void {
     this.messageService
-      .sendMessage(this.selectedChatId, this.newMessage, this.selectedFile)
+      .sendMessage(selectedChatId, this.newMessage, this.selectedFile)
       .then(() => {
         this.resetMessageInput();
       })
@@ -349,5 +351,19 @@ export class ChatComponent
     } else {
       return null;
     }
+  }
+
+  formatBytes(bytes: number, decimals = 2): string {
+    if (!bytes) {
+      return '0 Bytes';
+    }
+
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   }
 }
