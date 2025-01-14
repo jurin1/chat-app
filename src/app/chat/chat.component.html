@@ -1,0 +1,35 @@
+<div class="chat-container">
+    <div #scrollMe class="message-container">
+        <div *ngFor="let message of messages$ | async"
+             [ngStyle]="{'text-align': message.senderId === currentUserId ? 'right' : 'left'}"
+             class="message-item">
+            <p>
+                <strong>{{message.senderId}}:</strong>
+                <span [innerHTML]="message.content"></span>
+                <span *ngIf="message.fileUrl"
+                matTooltip="{{message.fileName}}" matTooltipPosition="above">
+                    <a [href]="message.fileUrl" target="_blank" style="margin-left: 5px; display: inline-flex; align-items: center;">
+                        <mat-icon style="margin-right: 3px;">attach_file</mat-icon>
+                    </a>
+                </span>
+            </p>
+             <p class="message-time" [ngStyle]="{'text-align': message.senderId === currentUserId ? 'right' : 'left'}">
+                {{formatDate(message.timestamp)}}
+            </p>
+        </div>
+    </div>
+    <div class="input-container">
+        <textarea placeholder="Nachricht" [(ngModel)]="newMessage" class="message-input"></textarea>
+        <button mat-icon-button color="primary" (click)="fileInput.click()" style="margin-left: 10px;">
+            <mat-icon>add</mat-icon>
+        </button>
+        <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)">
+        <span *ngIf="fileName" style="margin-left: 10px;">{{fileName}}</span>
+        <button mat-raised-button color="primary" (click)="sendMessage()" style="margin-left: 10px;">Senden</button>
+    </div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <button mat-raised-button color="primary" (click)="switchUser()">
+        Switch User
+    </button>
+</div>

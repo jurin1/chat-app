@@ -1,0 +1,21 @@
+<mat-sidenav-container class="sidenav-container">
+    <mat-sidenav #drawer class="sidenav" mode="side" [opened]="true">
+        <app-sidebar (chatSelected)="onChatSelected($event)"></app-sidebar>
+    </mat-sidenav>
+    <mat-sidenav-content>
+        <mat-toolbar color="primary">
+            <button type="button" aria-label="Toggle sidenav" mat-icon-button (click)="drawer.toggle()"
+                *ngIf="true">
+                <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+            </button>
+            <span>Chat-App</span>
+             <span style="flex: 1 1 auto;"></span>
+              <button mat-raised-button color="primary" (click)="switchUser()">
+                Switch User
+              </button>
+        </mat-toolbar>
+        <div class="content">
+            <app-chat [selectedChatId]="selectedChatId"></app-chat>
+        </div>
+    </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,21 @@
+<mat-toolbar>
+    Chats
+</mat-toolbar>
+<div class="sidebar-content">
+    <button mat-mini-fab color="primary" (click)="openCreateChatDialog()" class="create-chat-button">
+        <mat-icon>add</mat-icon>
+    </button>
+    <div *ngFor="let chat of chats$ | async" class="chat-item" (click)="selectChat(chat.id!)">
+        <div class="chat-header">
+            <p class="chat-name">
+                {{chat.name || (chat.type === 'single' ? 'Einzelchat' : 'Gruppenchat')}}
+            </p>
+            <p class="chat-last-message-time">
+                {{formatDate(chat.lastMessageTimestamp)}}
+            </p>
+        </div>
+        <p class="chat-id">
+            {{chat.id}}
+        </p>
+    </div>
+</div>

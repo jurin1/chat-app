@@ -1,0 +1,64 @@
+:host {
+    display: block;
+    padding: 10px;
+}
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.create-chat-button {
+    margin-bottom: 10px;
+}
+
+.chat-item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-name {
+    margin: 0;
+    font-weight: bold;
+    flex: 1;
+}
+
+.chat-last-message-time {
+     margin: 0;
+    font-size: 0.8em;
+    color: #888;
+   white-space: nowrap;
+}
+
+.chat-id {
+    margin: 0;
+    font-size: 0.8em;
+    color: #888;
+}
+
+.chat-preview {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.chat-preview-text {
+   display: inline-block;
+    max-width: 100%;
+     white-space: nowrap;
+    overflow: hidden;
+     text-overflow: ellipsis;
+}
