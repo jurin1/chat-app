@@ -25,6 +25,7 @@
                     </mat-icon>
                     <span *ngIf="message.fileSize" style="margin-left: 5px; font-size: 0.8em;">({{formatBytes(message.fileSize)}})</span>
                 </span>
+                <span *ngIf="message.replies">({{message.replies}})</span>
             </p>
             <div class="message-reactions" *ngIf="message.reactions && (message.reactions | json) !== '{}' ">
                     <span *ngFor="let reaction of getReactionsArray(message.reactions)"
@@ -46,6 +47,9 @@
                        {{emoji}}
                     </button>
                </mat-menu>
+               <button mat-icon-button (click)="replyToMessageFunc(message)" aria-label="Antworte auf die Nachricht" (click)="$event.stopPropagation()">
+                    <mat-icon>reply</mat-icon>
+                </button>
            </div>
         </div>
     </div>

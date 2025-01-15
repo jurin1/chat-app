@@ -1,0 +1,40 @@
+:host {
+    display: block;
+    padding: 10px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.thread-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 100px);
+  padding: 10px;
+}
+
+.message-item {
+    margin-bottom: 10px;
+    max-width: 90%;
+    border: 1px solid #ccc;
+    padding: 3px 5px;
+    align-self: flex-start;
+    border-radius: 10px;
+    border-top-left-radius: 0;
+
+    &[style*="text-align: right"] {
+        align-self: flex-end;
+        border-top-right-radius: 0;
+        border-top-left-radius: 10px;
+    }
+
+    p{
+        margin: 0;
+    }
+}
+
+.message-time {
+    margin-top: -5px;
+    font-size: 0.7em;
+    color: #888;
+    margin-bottom: 10px;
+}

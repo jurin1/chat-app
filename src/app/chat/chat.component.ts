@@ -109,6 +109,11 @@ export class ChatComponent
   @ViewChild('messageMenuTrigger') messageMenuTrigger!: MatMenuTrigger;
 
   /**
+   * The message that is currently being replied to.
+   */
+  replyToMessage: Message | null = null;
+
+  /**
    * Constructor for ChatComponent.
    * @param {MessageService} messageService - Service for managing messages.
    * @param {AuthService} auth - Service for handling user authentication.
@@ -240,7 +245,12 @@ export class ChatComponent
    */
   private sendChatMessage(selectedChatId: string): void {
     this.messageService
-      .sendMessage(selectedChatId, this.newMessage, this.selectedFile)
+      .sendMessage(
+        selectedChatId,
+        this.newMessage,
+        this.selectedFile,
+        this.replyToMessage?.id
+      )
       .then(() => {
         this.resetMessageInput();
       })
@@ -257,6 +267,7 @@ export class ChatComponent
     this.selectedFile = null;
     this.fileUrl = null;
     this.fileName = null;
+    this.replyToMessage = null;
   }
 
   /**
@@ -667,13 +678,9 @@ export class ChatComponent
    * Sets the reply to for a new message.
    * @param {Message} message - The message to reply to.
    */
-  replyToMessage(message: Message): void {
+  replyToMessageFunc(message: Message): void {
     this.logReplyToMessage(message.id!);
-    this.newMessage = '';
-    this.editingMessage = null;
-    this.selectedFile = null;
-    this.fileUrl = null;
-    this.fileName = null;
+    this.replyToMessage = message;
     this.newMessage = `> ${message.content.substring(0, 50)}...\n`;
     this.scrollToBottom();
   }

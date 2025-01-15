@@ -15,6 +15,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Pipe({
   name: 'fileSize',
@@ -59,6 +60,7 @@ export class FileSizePipe implements PipeTransform {
     MatSidenavModule,
     MatToolbarModule,
     MatDialogModule,
+    MatTooltipModule,
     CommonModule,
     FileSizePipe,
   ],

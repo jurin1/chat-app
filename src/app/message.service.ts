@@ -12,6 +12,9 @@ import { catchError } from 'rxjs/operators';
 /**
  * Interface representing a message in the chat.
  */
+/**
+ * Interface representing a message in the chat.
+ */
 export interface Message {
     content: string;
     senderId: string;
@@ -28,6 +31,7 @@ export interface Message {
         };
     };
     replyTo?: string;
+    replies?: number;
 }
 
 interface Chat {
@@ -288,12 +292,14 @@ export class MessageService {
    * @param {string} chatId - The ID of the chat to send the message to.
    * @param {string} content - The content of the message.
    * @param {File | null} file - Optional file to upload and include in the message.
+   * @param {string} [replyTo] - Optional replyTo id.
    * @returns {Promise<any>} A Promise that resolves with the result of sending the message.
    */
   sendMessage(
     chatId: string,
     content: string,
-    file: File | null
+    file: File | null,
+    replyTo?: string
   ): Promise<any> {
     console.log(
       'sendMessage() called with content:',
@@ -306,7 +312,9 @@ export class MessageService {
     return this.auth.user
       .pipe(
         first(),
-        switchMap((user) => this.handleSendMessage(user, chatId, content, file))
+        switchMap((user) =>
+          this.handleSendMessage(user, chatId, content, file, replyTo)
+        )
       )
       .toPromise();
   }
@@ -316,13 +324,15 @@ export class MessageService {
    * @param {string} chatId - The ID of the chat to send the message to.
    * @param {string} content - The content of the message.
    * @param {File | null} file - Optional file to upload and include in the message.
+   *  @param {string} [replyTo] - Optional replyTo id.
    * @returns {Promise<any>} A Promise that resolves with the result of sending the message.
    */
   private handleSendMessage(
     user: User | null,
     chatId: string,
     content: string,
-    file: File | null
+    file: File | null,
+    replyTo?: string
   ): Promise<any> {
     if (!user) {
       return Promise.reject('No user found');
@@ -334,7 +344,8 @@ export class MessageService {
       content,
       file,
       firebaseUser,
-      timestamp
+      timestamp,
+      replyTo
     );
   }
   /**
@@ -344,6 +355,7 @@ export class MessageService {
    * @param {File | null} file - Optional file to upload and include in the message.
    * @param {User} firebaseUser - The firebase user object
    * @param {Date} timestamp - the timestamp
+   * @param {string} [replyTo] - Optional replyTo id.
    * @returns {Promise<any>} A Promise that resolves with the result of sending the message.
    */
   private handleMessageData(
@@ -351,7 +363,8 @@ export class MessageService {
     content: string,
     file: File | null,
     firebaseUser: User,
-    timestamp: Date
+    timestamp: Date,
+    replyTo?: string
   ): Promise<any> {
     return file
       ? this.uploadFileAndSendMessage(
@@ -359,9 +372,10 @@ export class MessageService {
           content,
           file,
           firebaseUser,
-          timestamp
+          timestamp,
+          replyTo
         )
-      : this.sendTextMessage(chatId, content, firebaseUser, timestamp);
+      : this.sendTextMessage(chatId, content, firebaseUser, timestamp, replyTo);
   }
 
   /**
@@ -371,6 +385,7 @@ export class MessageService {
    * @param {File} file -  file to upload and include in the message.
    * @param {User} firebaseUser - The firebase user object
    * @param {Date} timestamp - the timestamp
+   * @param {string} [replyTo] - Optional replyTo id.
    * @returns {Promise<any>} A Promise that resolves with the result of sending the message.
    */
   private uploadFileAndSendMessage(
@@ -378,7 +393,8 @@ export class MessageService {
     content: string,
     file: File,
     firebaseUser: User,
-    timestamp: Date
+    timestamp: Date,
+    replyTo?: string
   ): Promise<any> {
     const filePath = this.createFilePath(firebaseUser, file);
     return from(this.storage.upload(filePath, file))
@@ -391,7 +407,8 @@ export class MessageService {
             firebaseUser,
             timestamp,
             fileUrl,
-            file
+            file,
+            replyTo
           );
         })
       )
@@ -415,20 +432,24 @@ export class MessageService {
    * @param {string} content - The content of the message.
    * @param {User} firebaseUser - The firebase user object
    * @param {Date} timestamp - the timestamp
+   * @param {string} [replyTo] - Optional replyTo id.
    * @returns {Promise<any>} A Promise that resolves with the result of sending the message.
    */
   private sendTextMessage(
     chatId: string,
     content: string,
     firebaseUser: User,
-    timestamp: Date
+    timestamp: Date,
+    replyTo?: string
   ): Promise<any> {
     return this.addMessageToFirestore(
       chatId,
       content,
       firebaseUser,
       timestamp,
-      undefined
+      undefined,
+      undefined,
+      replyTo
     );
   }
   /**
@@ -438,6 +459,8 @@ export class MessageService {
    *  @param {User} firebaseUser - The firebase user object
    * @param {Date} timestamp - the timestamp
    *  @param {string} [fileUrl] - Optional fileUrl
+   * @param {File} [file] - Optional file
+   * @param {string} [replyTo] - Optional replyTo id.
    * @returns {Promise<any>} A Promise that resolves with the result of adding the message to firestore.
    */
   private addMessageToFirestore(
@@ -446,14 +469,16 @@ export class MessageService {
     firebaseUser: User,
     timestamp: Date,
     fileUrl?: string,
-    file?: File
+    file?: File,
+    replyTo?: string
   ): Promise<any> {
     const messageData = this.createMessageData(
       content,
       firebaseUser,
       timestamp,
       fileUrl,
-      file
+      file,
+      replyTo
     );
     console.log('Message Data:', messageData);
     return this.firestore
@@ -462,6 +487,9 @@ export class MessageService {
       .then((docRef) => {
         console.log('Document written with ID: ', docRef.id);
         this.updateLastMessageTimestamp(chatId, timestamp);
+        if (replyTo) {
+          this.updateReplyCount(chatId, replyTo);
+        }
         return docRef;
       })
       .catch((error) => {
@@ -476,6 +504,7 @@ export class MessageService {
    * @param {Date} timestamp - the timestamp.
    * @param {string} [fileUrl] - Optional fileUrl.
    * @param {File} [file] - Optional file.
+   *  @param {string} [replyTo] - Optional replyTo id.
    * @returns {Message} The message data object.
    */
   private createMessageData(
@@ -483,7 +512,8 @@ export class MessageService {
     firebaseUser: User,
     timestamp: Date,
     fileUrl?: string,
-    file?: File
+    file?: File,
+    replyTo?: string
   ): Message {
     return {
       content: content.replace(/\n/g, '<br>'),
@@ -494,6 +524,7 @@ export class MessageService {
       ...(fileUrl && { fileUrl }),
       ...(file && { fileName: file.name }),
       ...(file && { fileSize: file.size }),
+      ...(replyTo && { replyTo }),
     };
   }
   /**
@@ -521,6 +552,42 @@ export class MessageService {
           `Error checking if chat document exists with ID: ${chatId}`,
           error
         );
+      });
+  }
+
+  /**
+   * Updates the reply count of a message in Firestore.
+   * @param {string} chatId - The ID of the chat.
+   * @param {string} messageId - The ID of the message to update.
+   * @returns {Promise<void>} A Promise that resolves when the message is updated.
+   */
+  private updateReplyCount(chatId: string, messageId: string): Promise<void> {
+    return this.firestore
+      .doc(`chats/${chatId}/messages/${messageId}`)
+      .get()
+      .toPromise()
+      .then((doc) => {
+        if (doc && doc.exists) {
+          const message = doc.data() as Message;
+          const newReplyCount = (message.replies || 0) + 1;
+          return this.firestore
+            .doc(`chats/${chatId}/messages/${messageId}`)
+            .update({ replies: newReplyCount });
+        } else {
+          console.error(
+            `Message document with ID ${messageId} does not exist.`
+          );
+          return Promise.reject(
+            `Message document with ID ${messageId} does not exist.`
+          );
+        }
+      })
+      .catch((error) => {
+        console.error(
+          `Error checking if message document exists with ID: ${messageId}`,
+          error
+        );
+        return Promise.reject(error);
       });
   }
 }
