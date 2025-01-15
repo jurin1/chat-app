@@ -6,15 +6,19 @@ import { User } from '@firebase/auth';
 import { AngularFireStorage } from '@angular/fire/compat/storage';
 import { catchError } from 'rxjs/operators';
 
-interface Message {
-  content: string;
-  senderId: string;
-  timestamp: any;
-  fileUrl?: string;
-  fileDeleted?: boolean;
-  id?: string;
-  fileName?: string; 
-  fileSize?: number;
+/**
+ * Interface representing a message in the chat.
+ */
+export interface Message {
+    content: string;
+    senderId: string;
+    timestamp: any;
+    fileUrl?: string;
+    fileDeleted?: boolean;
+    id?: string;
+    fileName?: string;
+    fileSize?: number;
+    deleted?: boolean;
 }
 
 interface Chat {
@@ -116,6 +120,31 @@ export class MessageService {
       .doc(`chats/${chatId}/messages/${message.id}`)
       .update(updatedMessage);
     return of(updatedMessage);
+  }
+
+  /**
+   * Updates a message in Firestore.
+   * @param {string} chatId - The ID of the chat.
+   * @param {Partial<Message>} message - The message to update.
+   * @returns {Promise<void>} A Promise that resolves when the message is updated.
+   */
+  updateMessage(chatId: string, message: Partial<Message>): Promise<void> {
+    console.log(
+      'updateMessage() called with chatId:',
+      chatId,
+      'and message:',
+      message
+    );
+    return this.firestore
+      .doc(`chats/${chatId}/messages/${message.id}`)
+      .update(message)
+      .then(() => {
+        console.log('Message updated successfully');
+      })
+      .catch((error) => {
+        console.error('Error updating message: ', error);
+        return Promise.reject(error);
+      });
   }
 
   /**
@@ -453,6 +482,7 @@ export class MessageService {
       senderId: firebaseUser.uid,
       timestamp: timestamp,
       fileDeleted: false,
+      deleted: false, // Neu hinzugefügt
       ...(fileUrl && { fileUrl }),
       ...(file && { fileName: file.name }),
       ...(file && { fileSize: file.size }),

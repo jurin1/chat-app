@@ -19,20 +19,9 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { SharedModule } from '../../shared/shared';
 import { Timestamp } from 'firebase/firestore';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
-/**
- * Interface representing a message in the chat.
- */
-interface Message {
-  id?: string;
-  content: string;
-  senderId: string;
-  timestamp: any;
-  fileUrl?: string;
-  fileName?: string;
-  fileDeleted?: boolean;
-  fileSize?: number;
-}
+import { MatDialog } from '@angular/material/dialog';
+import { MessageDialogComponent } from '../message-dialog/message-dialog.component';
+import { Message } from '../message.service'; // Import from message.service.ts
 
 /**
  * Component for displaying and managing chat messages.
@@ -92,6 +81,15 @@ export class ChatComponent
    * Name of the selected file.
    */
   fileName: string | null = null;
+  /**
+   * The message that is currently being edited.
+   */
+  editingMessage: Message | null = null;
+
+  /**
+   * The content of the message that is currently being edited.
+   */
+  editedMessageContent = '';
 
   /**
    * Subscription to the auth user observable.
@@ -107,7 +105,8 @@ export class ChatComponent
   constructor(
     private messageService: MessageService,
     public auth: AuthService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    public dialog: MatDialog
   ) {
     this.logComponentInitialization();
   }
@@ -310,6 +309,136 @@ export class ChatComponent
   switchUser(): void {
     this.auth.switchUser();
   }
+  /**
+   * Toggles the edit mode for a message.
+   * @param {Message} message - The message to toggle.
+   */
+  toggleEditMessage(message: Message): void {
+    if (message.senderId !== this.currentUserId) {
+      console.log('You are not allowed to edit this message');
+      return;
+    }
+    this.editingMessage =
+      this.editingMessage?.id === message.id ? null : message;
+    this.editedMessageContent = message.content;
+  }
+  /**
+   * Updates a message in Firestore and resets editing mode.
+   * @param {Message} message - The message to update.
+   */
+  updateMessage(message: Message): void {
+    if (message.senderId !== this.currentUserId) {
+      console.log('You are not allowed to edit this message');
+      return;
+    }
+    if (this.editingMessage) {
+      this.editingMessage = null;
+      this.messageService
+        .updateMessage(this.selectedChatId, {
+          ...message,
+          content: this.editedMessageContent,
+          deleted: false,
+        })
+        .then(() => {
+          this.logUpdateMessageSuccess(message.id!);
+        })
+        .catch((error) => {
+          this.logUpdateMessageError(message.id!, error);
+        });
+    }
+  }
+  /**
+   * Logs that a message was successfully updated
+   * @param {string} messageId - The id of the message that was updated
+   */
+  private logUpdateMessageSuccess(messageId: string) {
+    console.log('Message was successfully updated with ID: ', messageId);
+  }
+  /**
+   * Logs that a message was not successfully updated
+   * @param {string} messageId - The id of the message that was not updated
+   * @param {any} error - the error that was thrown
+   */
+  private logUpdateMessageError(messageId: string, error: any) {
+    console.log('Error updating message with ID: ', messageId, error);
+  }
+  /**
+   * Deletes a file from a message by setting the fileDeleted flag to true.
+   * @param {Message} message - The message containing the file to delete.
+   */
+  deleteFile(message: Message): void {
+    if (message.senderId !== this.currentUserId) {
+      console.log('You are not allowed to delete this file');
+      return;
+    }
+    if (message.id && this.selectedChatId) {
+      this.logDeleteFile(message.id);
+      this.messageService
+        .updateMessage(this.selectedChatId, { ...message, fileDeleted: true })
+        .then(() => {
+          this.logFileDeletionSuccess(message.id!);
+        })
+        .catch((error) => {
+          this.logFileDeletionError(message.id!, error);
+        });
+    }
+  }
+  /**
+   * Logs that a delete file action was triggered.
+   * @param {string} messageId - The id of the message that will be deleted
+   */
+  private logDeleteFile(messageId: string) {
+    console.log('Delete file called with ID: ', messageId);
+  }
+  /**
+   * Logs that a file was successfully deleted
+   * @param {string} messageId - The id of the message that was deleted
+   */
+  private logFileDeletionSuccess(messageId: string) {
+    console.log('File was successfully deleted with ID: ', messageId);
+  }
+  /**
+   * Logs that a file was not successfully deleted
+   * @param {string} messageId - The id of the message that was not deleted
+   * @param {any} error - the error that was thrown
+   */
+  private logFileDeletionError(messageId: string, error: any) {
+    console.log('Error deleting file with ID: ', messageId, error);
+  }
+  /**
+   * Opens a message dialog to edit or delete a message.
+   * @param {Message} message - The message to edit.
+   */
+  openMessageDialog(message: Message): void {
+    if (message.senderId !== this.currentUserId) {
+      console.log('You are not allowed to edit this message');
+      return;
+    }
+    this.logOpenMessageDialog(message.id!);
+    const dialogRef = this.dialog.open(MessageDialogComponent, {
+      width: '500px',
+      data: { message: message, chatId: this.selectedChatId },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      this.logMessageDialogClosed(message.id!, result);
+    });
+  }
+  /**
+   * Logs that a open message dialog action was triggered.
+   * @param {string} messageId - The id of the message that will be edited
+   */
+  private logOpenMessageDialog(messageId: string) {
+    console.log('Open message dialog called with ID: ', messageId);
+  }
+  /**
+   * Logs that a message dialog was closed
+   * @param {string} messageId - The id of the message that was edited
+   * @param {any} result - The result of the dialog
+   */
+  private logMessageDialogClosed(messageId: string, result: any) {
+    console.log('Message Dialog was closed with ID: ', messageId, result);
+  }
 
   formatDate(date: any): string {
     if (!date) {
@@ -352,7 +481,6 @@ export class ChatComponent
       return null;
     }
   }
-
   formatBytes(bytes: number, decimals = 2): string {
     if (!bytes) {
       return '0 Bytes';
