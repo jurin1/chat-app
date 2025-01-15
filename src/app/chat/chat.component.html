@@ -1,35 +1,53 @@
 <div class="chat-container">
     <div #scrollMe class="message-container">
-<div *ngFor="let message of messages$ | async"
-         [ngStyle]="{'text-align': message.senderId === currentUserId ? 'right' : 'left'}"
-         class="message-item"
-         (click)="openMessageDialog(message)"
-         [style.cursor]="message.senderId === currentUserId ? 'pointer' : 'default'">
-        <p>
-            <strong>{{message.senderId}}:</strong>
-             <span *ngIf="!message.deleted" [innerHTML]="message.content"></span>
-             <span *ngIf="message.deleted">
-                <span style="font-style: italic; color: grey;">
-                    (Nachricht gelöscht)
+        <div *ngFor="let message of messages$ | async"
+             [ngStyle]="{'text-align': message.senderId === currentUserId ? 'right' : 'left'}"
+             class="message-item"
+             (click)="openMessageDialog(message)"
+             [style.cursor]="message.senderId === currentUserId ? 'pointer' : 'default'">
+            <p>
+                <strong>{{message.senderId}}:</strong>
+                <span *ngIf="!message.deleted" [innerHTML]="message.content"></span>
+                <span *ngIf="message.deleted">
+                    <span style="font-style: italic; color: grey;">
+                        (Nachricht gelöscht)
+                    </span>
                 </span>
-            </span>
-             <span *ngIf="message.fileUrl"
-                [matTooltip]="message.fileDeleted ? ('Datei wurde gelöscht\n' + message.fileName) : (message.fileName || '')"
-                matTooltipPosition="above">
+                <span *ngIf="message.fileUrl"
+                      [matTooltip]="message.fileDeleted ? ('Datei wurde gelöscht\n' + message.fileName) : (message.fileName || '')"
+                      matTooltipPosition="above">
                     <a *ngIf="!message.fileDeleted" [href]="message.fileUrl" target="_blank" style="margin-left: 5px; display: inline-flex; align-items: center;">
                         <mat-icon style="margin-right: 3px;">attach_file</mat-icon>
                     </a>
                     <mat-icon *ngIf="message.fileDeleted"
-                            style="margin-left: 5px; display: inline-flex; align-items: center;">
+                              style="margin-left: 5px; display: inline-flex; align-items: center;">
                         block
                     </mat-icon>
                     <span *ngIf="message.fileSize" style="margin-left: 5px; font-size: 0.8em;">({{formatBytes(message.fileSize)}})</span>
                 </span>
-        </p>
-         <p class="message-time" [ngStyle]="{'text-align': message.senderId === currentUserId ? 'right' : 'left'}">
-            {{formatDate(message.timestamp)}}
-        </p>
-    </div>
+            </p>
+            <div class="message-reactions" *ngIf="message.reactions && (message.reactions | json) !== '{}' ">
+                    <span *ngFor="let reaction of getReactionsArray(message.reactions)"
+                          class="reaction-item"
+                          [matTooltip]="getReactionTooltip(reaction, message.reactions)"
+                          matTooltipPosition="above">
+                    {{reaction.emoji}} {{reaction.count}}
+                </span>
+            </div>
+            <p class="message-time" [ngStyle]="{'text-align': message.senderId === currentUserId ? 'right' : 'left'}">
+                {{formatDate(message.timestamp)}}
+            </p>
+           <div style="text-align: right;">
+               <button mat-icon-button [matMenuTriggerFor]="reactionMenu" aria-label="Reagiere auf die Nachricht"  (click)="$event.stopPropagation()">
+                    <mat-icon>emoji_emotions</mat-icon>
+               </button>
+               <mat-menu #reactionMenu="matMenu">
+                    <button mat-menu-item *ngFor="let emoji of emojis" (click)="addReaction(message, emoji)">
+                       {{emoji}}
+                    </button>
+               </mat-menu>
+           </div>
+        </div>
     </div>
     <div class="input-container">
         <textarea placeholder="Nachricht" [(ngModel)]="newMessage" class="message-input"></textarea>

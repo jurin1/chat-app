@@ -9,7 +9,7 @@ import {
   AfterViewChecked,
   OnDestroy,
 } from '@angular/core';
-import { MessageService } from '../message.service';
+import { MessageService, Message } from '../message.service';
 import { Observable, Subscription } from 'rxjs';
 import { AuthService } from '../auth.service';
 import { NgStyle } from '@angular/common';
@@ -21,7 +21,7 @@ import { Timestamp } from 'firebase/firestore';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MessageDialogComponent } from '../message-dialog/message-dialog.component';
-import { Message } from '../message.service'; // Import from message.service.ts
+import { MatMenuModule } from '@angular/material/menu';
 
 /**
  * Component for displaying and managing chat messages.
@@ -35,6 +35,7 @@ import { Message } from '../message.service'; // Import from message.service.ts
     MatButtonModule,
     SharedModule,
     MatTooltipModule,
+    MatMenuModule,
   ],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss'],
@@ -95,6 +96,11 @@ export class ChatComponent
    * Subscription to the auth user observable.
    */
   private authSubscription?: Subscription;
+
+  /**
+   * Array of predefined emojis for reactions.
+   */
+  readonly emojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
 
   /**
    * Constructor for ChatComponent.
@@ -493,5 +499,149 @@ export class ChatComponent
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  /**
+   * Adds a reaction to a message.
+   * @param {Message} message - The message to react to.
+   * @param {string} emoji - The emoji to use for the reaction.
+   */
+  addReaction(message: Message, emoji: string): void {
+    this.logAddReaction(message.id!, emoji);
+    if (!message.id || !this.currentUserId || !this.selectedChatId) {
+      return;
+    }
+    this.messageService
+      .updateMessage(
+        this.selectedChatId,
+        this.createReactionUpdate(message, emoji)
+      )
+      .then(() => {
+        this.logAddReactionSuccess(message.id!, emoji);
+      })
+      .catch((error) => {
+        this.logAddReactionError(message.id!, emoji, error);
+      });
+  }
+  /**
+   * Logs that a add reaction action was triggered.
+   * @param {string} messageId - The id of the message that will be deleted
+   * @param {string} emoji - The emoji that was used
+   */
+  private logAddReaction(messageId: string, emoji: string) {
+    console.log(
+      'Add reaction called with ID: ',
+      messageId,
+      'and emoji: ',
+      emoji
+    );
+  }
+  /**
+   * Logs that a reaction was successfully added
+   * @param {string} messageId - The id of the message that was deleted
+   * @param {string} emoji - The emoji that was used
+   */
+  private logAddReactionSuccess(messageId: string, emoji: string) {
+    console.log(
+      'Reaction was successfully added with ID: ',
+      messageId,
+      'and emoji: ',
+      emoji
+    );
+  }
+  /**
+   * Logs that a reaction was not successfully added
+   * @param {string} messageId - The id of the message that was not deleted
+   * @param {string} emoji - The emoji that was used
+   * @param {any} error - the error that was thrown
+   */
+  private logAddReactionError(messageId: string, emoji: string, error: any) {
+    console.log(
+      'Error adding reaction with ID: ',
+      messageId,
+      'and emoji: ',
+      emoji,
+      error
+    );
+  }
+  /**
+   * Creates the reaction update object for firestore.
+   * @param {Message} message - The message to react to.
+   * @param {string} emoji - The emoji to use for the reaction.
+   * @returns {Partial<Message>} The updated message object.
+   */
+  private createReactionUpdate(
+    message: Message,
+    emoji: string
+  ): Partial<Message> {
+    const updatedReactions = message.reactions ? { ...message.reactions } : {};
+    // Remove existing reaction from the current user
+    for (const key in updatedReactions) {
+      if (updatedReactions[key].userIds.includes(this.currentUserId!)) {
+        updatedReactions[key].userIds = updatedReactions[key].userIds.filter(
+          (id) => id !== this.currentUserId
+        );
+        if (updatedReactions[key].userIds.length === 0) {
+          delete updatedReactions[key];
+        }
+      }
+    }
+    // Add the new reaction
+    if (updatedReactions[emoji]) {
+      updatedReactions[emoji].userIds.push(this.currentUserId!);
+    } else {
+      updatedReactions[emoji] = { userIds: [this.currentUserId!] };
+    }
+    return { ...message, reactions: updatedReactions };
+  }
+
+  /**
+   * Returns an array of reactions with emoji and count
+   * @param { { [emoji: string]: { userIds: string[]; }; } | undefined} reactions - the reactions object
+   * @returns {{ emoji: string; count: number; }[]} the array of reactions
+   */
+  getReactionsArray(
+    reactions: { [emoji: string]: { userIds: string[] } } | undefined
+  ): { emoji: string; count: number }[] {
+    if (!reactions) {
+      return [];
+    }
+    return Object.entries(reactions).map(([emoji, data]) => ({
+      emoji,
+      count: data.userIds.length,
+    }));
+  }
+  /**
+   * Returns the tooltip for the reactions
+   * @param { { emoji: string; count: number; } } reaction - the reaction object
+   * @param { { [emoji: string]: { userIds: string[]; }; } | undefined} reactions - the reactions object
+   * @returns {string} the tooltip string
+   */
+  getReactionTooltip(
+    reaction: { emoji: string; count: number },
+    reactions: { [emoji: string]: { userIds: string[] } } | undefined
+  ): string {
+    if (!reactions || !reactions[reaction.emoji]) {
+      return '';
+    }
+    return reactions[reaction.emoji].userIds
+      .map((userId) => {
+        return this.getUserName(userId);
+      })
+      .join('\n');
+  }
+  /**
+   * Returns the name of a user by its id
+   * @param {string} userId - the id of the user
+   * @returns {string} the name of the user
+   */
+  getUserName(userId: string): string {
+    if (userId === 'user1') {
+      return 'User 1';
+    }
+    if (userId === 'user2') {
+      return 'User 2';
+    }
+    return userId;
   }
 }

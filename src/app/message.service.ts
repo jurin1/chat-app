@@ -9,6 +9,9 @@ import { catchError } from 'rxjs/operators';
 /**
  * Interface representing a message in the chat.
  */
+/**
+ * Interface representing a message in the chat.
+ */
 export interface Message {
     content: string;
     senderId: string;
@@ -19,6 +22,12 @@ export interface Message {
     fileName?: string;
     fileSize?: number;
     deleted?: boolean;
+    reactions?: {
+        [emoji: string]: {
+            userIds: string[];
+        };
+    };
+    replyTo?: string;
 }
 
 interface Chat {
@@ -146,7 +155,6 @@ export class MessageService {
         return Promise.reject(error);
       });
   }
-
   /**
    * Creates a new chat in Firestore. Handles both single and group chats.
    * @param { 'single' | 'group' } type - The type of chat ('single' or 'group').
