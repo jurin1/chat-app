@@ -29,8 +29,8 @@
             <div class="message-reactions" *ngIf="message.reactions && (message.reactions | json) !== '{}' ">
                     <span *ngFor="let reaction of getReactionsArray(message.reactions)"
                           class="reaction-item"
-                          [matTooltip]="getReactionTooltip(reaction, message.reactions)"
-                          matTooltipPosition="above">
+                          (click)="openReactionDialog(message)"
+                           style="cursor: pointer">
                     {{reaction.emoji}} {{reaction.count}}
                 </span>
             </div>

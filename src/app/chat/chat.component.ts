@@ -21,7 +21,8 @@ import { Timestamp } from 'firebase/firestore';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MessageDialogComponent } from '../message-dialog/message-dialog.component';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { ReactionDialogComponent } from '../reaction-dialog/reaction-dialog.component'; // Import ReactionDialogComponent
 
 /**
  * Component for displaying and managing chat messages.
@@ -101,6 +102,11 @@ export class ChatComponent
    * Array of predefined emojis for reactions.
    */
   readonly emojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+
+  /**
+   * Reference to the message menu trigger.
+   */
+  @ViewChild('messageMenuTrigger') messageMenuTrigger!: MatMenuTrigger;
 
   /**
    * Constructor for ChatComponent.
@@ -612,23 +618,22 @@ export class ChatComponent
     }));
   }
   /**
-   * Returns the tooltip for the reactions
-   * @param { { emoji: string; count: number; } } reaction - the reaction object
-   * @param { { [emoji: string]: { userIds: string[]; }; } | undefined} reactions - the reactions object
-   * @returns {string} the tooltip string
+   * Opens the reaction dialog.
+   * @param {Message} message - The message to show reactions for.
    */
-  getReactionTooltip(
-    reaction: { emoji: string; count: number },
-    reactions: { [emoji: string]: { userIds: string[] } } | undefined
-  ): string {
-    if (!reactions || !reactions[reaction.emoji]) {
-      return '';
-    }
-    return reactions[reaction.emoji].userIds
-      .map((userId) => {
-        return this.getUserName(userId);
-      })
-      .join('\n');
+  openReactionDialog(message: Message): void {
+    this.logOpenReactionDialog(message.id!);
+    this.dialog.open(ReactionDialogComponent, {
+      width: '500px',
+      data: { message: message },
+    });
+  }
+  /**
+   * Logs that a open reaction dialog action was triggered.
+   * @param {string} messageId - The id of the message that will be edited
+   */
+  private logOpenReactionDialog(messageId: string) {
+    console.log('Open reaction dialog called with ID: ', messageId);
   }
   /**
    * Returns the name of a user by its id
@@ -643,5 +648,40 @@ export class ChatComponent
       return 'User 2';
     }
     return userId;
+  }
+  /**
+   * Opens a message context menu.
+   * @param {MouseEvent} event - The mouse event.
+   * @param {Message} message - The message for which to open the context menu.
+   * @param {MatMenuTrigger} menuTrigger - The menu trigger.
+   */
+  openMessageContextMenu(
+    event: MouseEvent,
+    message: Message,
+    menuTrigger: MatMenuTrigger
+  ): void {
+    event.preventDefault();
+    menuTrigger.openMenu();
+  }
+  /**
+   * Sets the reply to for a new message.
+   * @param {Message} message - The message to reply to.
+   */
+  replyToMessage(message: Message): void {
+    this.logReplyToMessage(message.id!);
+    this.newMessage = '';
+    this.editingMessage = null;
+    this.selectedFile = null;
+    this.fileUrl = null;
+    this.fileName = null;
+    this.newMessage = `> ${message.content.substring(0, 50)}...\n`;
+    this.scrollToBottom();
+  }
+  /**
+   * Logs that a reply to message action was triggered.
+   * @param {string} messageId - The id of the message that will be replied to.
+   */
+  private logReplyToMessage(messageId: string) {
+    console.log('Reply to message called with ID: ', messageId);
   }
 }

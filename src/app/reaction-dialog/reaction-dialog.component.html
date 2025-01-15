@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>Reaktionen</h2>
+<mat-dialog-content>
+    <div *ngFor="let reaction of getReactionsArray(data.message.reactions)">
+        <h3>{{reaction.emoji}}</h3>
+       <mat-list>
+            <mat-list-item *ngFor="let userId of reaction.userIds">
+                {{getUserName(userId)}}
+            </mat-list-item>
+        </mat-list>
+    </div>
+</mat-dialog-content>
