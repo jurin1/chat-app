@@ -16,25 +16,28 @@
     margin-bottom: 10px;
     max-width: 90%;
     border: 1px solid #ccc;
-    padding: 3px 5px;
+    padding: 5px;
     align-self: flex-start;
     border-radius: 10px;
-    border-top-left-radius: 0;
-
-    &[style*="text-align: right"] {
+    display: flex;
+    flex-direction: column;
+    &.own-message {
         align-self: flex-end;
-        border-top-right-radius: 0;
-        border-top-left-radius: 10px;
+        .message-content {
+            border-top-right-radius: 0;
+            border-top-left-radius: 10px;
+        }
     }
-
-    p{
-        margin: 0;
-    }
+}
+.message-content{
+    border-radius: 10px;
+    border-top-left-radius: 0;
+    padding: 3px 5px;
 }
 
 .message-time {
-    margin-top: -5px;
     font-size: 0.7em;
     color: #888;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
+    text-align: right;
 }

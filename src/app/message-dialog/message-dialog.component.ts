@@ -10,6 +10,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Message } from '../message.service'; // Import from message.service.ts
+import { first } from 'rxjs';
 
 @Component({
   selector: 'app-message-dialog',
@@ -34,7 +35,7 @@ export class MessageDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<MessageDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { message: Message; chatId: string },
-    private messageService: MessageService,
+    @Inject(MessageService) private messageService: MessageService,
     public auth: AuthService,
     private sanitizer: DomSanitizer
   ) {
@@ -161,15 +162,19 @@ export class MessageDialogComponent {
    */
   sendMessage(): void {
     if (this.selectedFile) {
-      this.messageService
-        .sendMessage(
-          this.data.chatId,
-          this.editedMessageContent,
-          this.selectedFile
-        )
-        .then(() => {
-          this.dialogRef.close();
-        });
+      this.auth.user.pipe(first()).subscribe((user) => {
+        if (user) {
+          this.messageService
+            .sendMessage(
+              this.data.chatId,
+              this.editedMessageContent,
+              this.selectedFile
+            )
+            .then(() => {
+              this.dialogRef.close();
+            });
+        }
+      });
     } else {
       this.updateMessage();
     }

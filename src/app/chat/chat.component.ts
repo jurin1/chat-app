@@ -8,6 +8,8 @@ import {
   ElementRef,
   AfterViewChecked,
   OnDestroy,
+  Output,
+  EventEmitter,
 } from '@angular/core';
 import { MessageService, Message } from '../message.service';
 import { Observable, Subscription } from 'rxjs';
@@ -112,6 +114,13 @@ export class ChatComponent
    * The message that is currently being replied to.
    */
   replyToMessage: Message | null = null;
+
+  /**
+   * Output event to open the thread.
+   */
+  @Output() openThread = new EventEmitter<string>();
+
+  
 
   /**
    * Constructor for ChatComponent.
@@ -504,19 +513,6 @@ export class ChatComponent
       return null;
     }
   }
-  formatBytes(bytes: number, decimals = 2): string {
-    if (!bytes) {
-      return '0 Bytes';
-    }
-
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-  }
 
   /**
    * Adds a reaction to a message.
@@ -681,7 +677,11 @@ export class ChatComponent
   replyToMessageFunc(message: Message): void {
     this.logReplyToMessage(message.id!);
     this.replyToMessage = message;
-    this.newMessage = `> ${message.content.substring(0, 50)}...\n`;
+    // Entferne HTML-Tags und kürze den Text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = message.content;
+    const plainTextContent = tempDiv.textContent || tempDiv.innerText || '';
+    this.newMessage = `> ${plainTextContent.substring(0, 50)}...\n`;
     this.scrollToBottom();
   }
   /**
@@ -690,5 +690,12 @@ export class ChatComponent
    */
   private logReplyToMessage(messageId: string) {
     console.log('Reply to message called with ID: ', messageId);
+  }
+  /**
+   * Emits the openThread event.
+   * @param {Message} message - The message to open the thread for.
+   */
+  openThreadSidebar(message: Message): void {
+    this.openThread.emit(message.id!);
   }
 }

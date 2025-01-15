@@ -99,4 +99,10 @@ export class AppComponent {
     this.selectedMessageId = messageId;
     this.threadDrawer.open();
   }
+  /**
+   * Closes the thread sidebar.
+   */
+  closeThreadSidebar(): void {
+    this.threadDrawer.close();
+  }
 }

@@ -9,29 +9,23 @@ import { catchError } from 'rxjs/operators';
 /**
  * Interface representing a message in the chat.
  */
-/**
- * Interface representing a message in the chat.
- */
-/**
- * Interface representing a message in the chat.
- */
 export interface Message {
-    content: string;
-    senderId: string;
-    timestamp: any;
-    fileUrl?: string;
-    fileDeleted?: boolean;
-    id?: string;
-    fileName?: string;
-    fileSize?: number;
-    deleted?: boolean;
-    reactions?: {
-        [emoji: string]: {
-            userIds: string[];
-        };
+  content: string;
+  senderId: string;
+  timestamp: any;
+  fileUrl?: string;
+  fileDeleted?: boolean;
+  id?: string;
+  fileName?: string;
+  fileSize?: number;
+  deleted?: boolean;
+  reactions?: {
+    [emoji: string]: {
+      userIds: string[];
     };
-    replyTo?: string;
-    replies?: number;
+  };
+  replyTo?: string;
+  replies?: number;
 }
 
 interface Chat {
@@ -47,6 +41,9 @@ interface Chat {
   providedIn: 'root',
 })
 export class MessageService {
+  doc(arg0: string) {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     private firestore: AngularFirestore,
     private auth: AuthService,
@@ -554,7 +551,6 @@ export class MessageService {
         );
       });
   }
-
   /**
    * Updates the reply count of a message in Firestore.
    * @param {string} chatId - The ID of the chat.

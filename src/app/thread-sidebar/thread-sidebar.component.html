@@ -1,0 +1,111 @@
+<div class="thread-container">
+    <button mat-icon-button (click)="closeThreadSidebar()" style="margin-left: auto;">
+        <mat-icon>close</mat-icon>
+    </button>
+    <div *ngIf="originalMessage$ | async as originalMessage"
+         class="message-item"
+         [ngClass]="{'own-message': originalMessage.senderId === currentUserId}"
+         [style.cursor]="originalMessage.senderId === currentUserId ? 'pointer' : 'default'">
+        <div class="message-content" (click)="openMessageDialog(originalMessage)"
+                 [style.cursor]="originalMessage.senderId === currentUserId ? 'pointer' : 'default'">
+            <p>
+                <strong>{{getUserName(originalMessage.senderId)}}:</strong>
+                <span *ngIf="!originalMessage.deleted" [innerHTML]="originalMessage.content"></span>
+                <span *ngIf="originalMessage.deleted">
+                    <span style="font-style: italic; color: grey;">
+                        (Nachricht gelöscht)
+                    </span>
+                </span>
+                <span *ngIf="originalMessage.fileUrl"
+                      [matTooltip]="originalMessage.fileDeleted ? ('Datei wurde gelöscht\n' + originalMessage.fileName) : (originalMessage.fileName || '')"
+                      matTooltipPosition="above">
+                    <a *ngIf="!originalMessage.fileDeleted" [href]="originalMessage.fileUrl" target="_blank"
+                       style="margin-left: 5px; display: inline-flex; align-items: center;">
+                        <mat-icon style="margin-right: 3px;">attach_file</mat-icon>
+                    </a>
+                    <mat-icon *ngIf="originalMessage.fileDeleted"
+                              style="margin-left: 5px; display: inline-flex; align-items: center;">
+                        block
+                    </mat-icon>
+                    <span *ngIf="originalMessage.fileSize"
+                          style="margin-left: 5px; font-size: 0.8em;">({{originalMessage.fileSize | fileSize}})</span>
+                </span>
+            </p>
+             <p class="message-time">
+                 {{formatDate(originalMessage.timestamp)}}
+             </p>
+        </div>
+         <div class="message-actions">
+                  <div class="message-reactions" *ngIf="originalMessage.reactions && (originalMessage.reactions | json) !== '{}' ">
+                        <span *ngFor="let reaction of getReactionsArray(originalMessage.reactions)"
+                              class="reaction-item"
+                              (click)="openReactionDialog(originalMessage)"
+                               style="cursor: pointer">
+                        {{reaction.emoji}} {{reaction.count}}
+                    </span>
+                </div>
+                   <div class="action-buttons">
+                        <button mat-icon-button [matMenuTriggerFor]="reactionMenu" aria-label="Reagiere auf die Nachricht" (click)="$event.stopPropagation()">
+                           <mat-icon>emoji_emotions</mat-icon>
+                       </button>
+                         <mat-menu #reactionMenu="matMenu">
+                           <button mat-menu-item *ngFor="let emoji of emojis" (click)="addReaction(originalMessage, emoji)">
+                              {{emoji}}
+                           </button>
+                      </mat-menu>
+                 </div>
+           </div>
+    </div>
+    <div *ngFor="let message of messages$ | async"
+         class="message-item"
+         [ngClass]="{'own-message': message.senderId === currentUserId}"
+         [style.cursor]="message.senderId === currentUserId ? 'pointer' : 'default'">
+         <div class="message-content" (click)="openMessageDialog(message)"
+                 [style.cursor]="message.senderId === currentUserId ? 'pointer' : 'default'">
+            <p>
+                <strong>{{getUserName(message.senderId)}}:</strong>
+                <span *ngIf="!message.deleted" [innerHTML]="message.content"></span>
+                <span *ngIf="message.deleted">
+                    <span style="font-style: italic; color: grey;">
+                        (Nachricht gelöscht)
+                    </span>
+                </span>
+                 <span *ngIf="message.fileUrl"
+                       [matTooltip]="message.fileDeleted ? ('Datei wurde gelöscht\n' + message.fileName) : (message.fileName || '')"
+                       matTooltipPosition="above">
+                    <a *ngIf="!message.fileDeleted" [href]="message.fileUrl" target="_blank" style="margin-left: 5px; display: inline-flex; align-items: center;">
+                        <mat-icon style="margin-right: 3px;">attach_file</mat-icon>
+                    </a>
+                    <mat-icon *ngIf="message.fileDeleted"
+                              style="margin-left: 5px; display: inline-flex; align-items: center;">
+                        block
+                    </mat-icon>
+                    <span *ngIf="message.fileSize" style="margin-left: 5px; font-size: 0.8em;">({{message.fileSize | fileSize}})</span>
+                </span>
+            </p>
+             <p class="message-time">
+                 {{formatDate(message.timestamp)}}
+             </p>
+         </div>
+         <div class="message-actions">
+               <div class="message-reactions" *ngIf="message.reactions && (message.reactions | json) !== '{}' ">
+                     <span *ngFor="let reaction of getReactionsArray(message.reactions)"
+                           class="reaction-item"
+                           (click)="openReactionDialog(message)"
+                            style="cursor: pointer">
+                     {{reaction.emoji}} {{reaction.count}}
+                 </span>
+             </div>
+               <div class="action-buttons">
+                     <button mat-icon-button [matMenuTriggerFor]="reactionMenu" aria-label="Reagiere auf die Nachricht" (click)="$event.stopPropagation()">
+                       <mat-icon>emoji_emotions</mat-icon>
+                   </button>
+                     <mat-menu #reactionMenu="matMenu">
+                       <button mat-menu-item *ngFor="let emoji of emojis" (click)="addReaction(message, emoji)">
+                          {{emoji}}
+                       </button>
+                  </mat-menu>
+               </div>
+         </div>
+    </div>
+</div>
