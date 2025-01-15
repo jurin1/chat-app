@@ -2,9 +2,6 @@
     <mat-sidenav #drawer class="sidenav" mode="side" [opened]="true">
         <app-sidebar (chatSelected)="onChatSelected($event)"></app-sidebar>
     </mat-sidenav>
-    <mat-sidenav #threadDrawer class="thread-sidenav" mode="side" position="end" [opened]="false">
-        <app-thread-sidebar [chatId]="selectedChatId" [messageId]="selectedMessageId"></app-thread-sidebar>
-    </mat-sidenav>
     <mat-sidenav-content>
         <mat-toolbar color="primary">
             <button type="button" aria-label="Toggle sidenav" mat-icon-button (click)="drawer.toggle()"
